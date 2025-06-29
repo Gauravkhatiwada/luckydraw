@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Lucky Draw Grand Celebration</title>
+  <style>
+    body {
+      text-align: center;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f9f9f9, #e0f7fa);
+      color: #333;
+      margin: 0;
+      padding: 0;
+      overflow-x: hidden;
+    }
+    #logo {
+      margin-top: 20px;
+      height: 100px;
+    }
+    h1 {
+      margin-top: 10px;
+      font-size: 2.5em;
+      color: #1b5e20;
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+    }
+    #subInfo {
+      margin-top: 10px;
+      font-size: 1.2em;
+    }
+    #subInfo a {
+      color: #00796b;
+      text-decoration: none;
+      font-weight: bold;
+    }
+    #subInfo a:hover {
+      text-decoration: underline;
+    }
+    #numberBox {
+      display: inline-flex;
+      padding: 25px;
+      border: 5px solid #4CAF50;
+      border-radius: 20px;
+      background: white;
+      font-size: 5em;
+      font-weight: bold;
+      margin: 30px auto;
+      box-shadow: 0 0 25px rgba(0,0,0,0.3);
+    }
+    .digit {
+      display: inline-block;
+      width: 60px;
+      color: #2e7d32;
+      background: #e8f5e9;
+      border-radius: 8px;
+      margin: 0 4px;
+      transition: transform 0.2s;
+    }
+    .digit.spinning {
+      transform: scale(1.2);
+    }
+    #announcement {
+      height: 130px; /* Space reserved for winner text */
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+    }
+    #congrats {
+      font-size: 3em;
+      color: #d81b60;
+      font-weight: bold;
+      text-shadow: 0 0 10px #ffeb3b;
+      animation: pulse 1.5s infinite;
+    }
+    #winnerName {
+      font-size: 4em;
+      color: #c2185b;
+      font-weight: bold;
+      text-shadow: 0 0 15px #f06292;
+      animation: bounce 0.5s ease-in-out 2;
+    }
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.1); }
+      100% { transform: scale(1); }
+    }
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-10px); }
+    }
+    #startBtn {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 40px;
+      font-size: 1.5em;
+      border: none;
+      border-radius: 10px;
+      background-color: #4CAF50;
+      color: white;
+      cursor: pointer;
+      transition: 0.3s;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+      z-index: 20;
+    }
+    #startBtn:hover {
+      background-color: #45a049;
+      transform: translateX(-50%) scale(1.05);
+    }
+    #balloonContainer {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 10;
+    }
+    .balloon {
+      position: absolute;
+      width: 50px;
+      height: 70px;
+      background: radial-gradient(circle, #ff5252, #d32f2f);
+      border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+      animation: float 6s linear forwards;
+    }
+    .balloon::after {
+      content: '';
+      position: absolute;
+      bottom: -20px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 2px;
+      height: 20px;
+      background: #666;
+    }
+    @keyframes float {
+      0% { transform: translateY(100vh); opacity: 1; }
+      100% { transform: translateY(-150px); opacity: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<img id="logo" src="https://via.placeholder.com/300x100?text=Your+Logo+Here" alt="Logo">
+<h1>Shofydrop Lucky Draw</h1>
+
+<div id="subInfo">
+  <a href="https://shofydrop.com/" target="_blank">https://shofydrop.com/</a><br>
+  First draw for Rs 500 and second draw for Rs 1000
+</div>
+
+<div id="numberBox"></div>
+
+<div id="announcement">
+  <div id="congrats"></div>
+  <div id="winnerName"></div>
+</div>
+
+<div id="balloonContainer"></div>
+
+<button id="startBtn" onclick="startDraw()">Start</button>
+
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+<script>
+const participants = [
+  { name: "Ram", number: "9800000001" },
+  { name: "Sita", number: "9811111112" },
+  { name: "Hari", number: "9822222223" },
+  { name: "Gita", number: "9833333334" },
+  { name: "Shyam", number: "9844444445" },
+  { name: "Rita", number: "9855555556" }
+];
+
+let ongoingCelebration = false;
+
+function initializeNumberBox() {
+  const numberBox = document.getElementById("numberBox");
+  numberBox.innerHTML = '';
+  for (let i = 0; i < 10; i++) {
+    const span = document.createElement("span");
+    span.className = "digit";
+    span.innerText = "0"; // Start with all 0
+    numberBox.appendChild(span);
+  }
+}
+initializeNumberBox();
+
+function stopCelebration() {
+  ongoingCelebration = false;
+  document.getElementById("balloonContainer").innerHTML = '';
+}
+
+async function startDraw() {
+  stopCelebration();
+
+  const numberBox = document.getElementById("numberBox");
+  const congrats = document.getElementById("congrats");
+  const winnerNameEl = document.getElementById("winnerName");
+  const balloonContainer = document.getElementById("balloonContainer");
+
+  congrats.innerText = "";
+  winnerNameEl.innerText = "";
+  balloonContainer.innerHTML = "";
+
+  const digitElements = numberBox.getElementsByClassName("digit");
+  let stops = Array(10).fill(false);
+  let intervals = [];
+
+  // Set to "-"
+  for (let i = 0; i < 10; i++) {
+    digitElements[i].innerText = "-";
+  }
+
+  for (let i = 0; i < 10; i++) {
+    digitElements[i].classList.add("spinning");
+    let interval = setInterval(() => {
+      if (!stops[i]) {
+        digitElements[i].innerText = Math.floor(Math.random() * 10);
+      }
+    }, 50);
+    intervals.push(interval);
+  }
+
+  let delay = 1000;
+  for (let i = 0; i < 10; i++) {
+    setTimeout(() => {
+      stops[i] = true;
+      digitElements[i].classList.remove("spinning");
+      digitElements[i].innerText = Math.floor(Math.random() * 10);
+
+      if (i === 9) {
+        setTimeout(() => {
+          stops[i] = false;
+          digitElements[i].classList.add("spinning");
+        }, 500);
+
+        setTimeout(() => {
+          stops[i] = true;
+          digitElements[i].classList.remove("spinning");
+
+          const winner = participants[Math.floor(Math.random() * participants.length)];
+          const winnerName = winner.name;
+          const winnerNumber = winner.number;
+
+          for (let d = 0; d < 10; d++) {
+            digitElements[d].innerText = winnerNumber[d];
+            digitElements[d].style.background = "#c8e6c9";
+          }
+
+          congrats.innerText = "🎉 Congratulations! 🎉";
+          winnerNameEl.innerText = winnerName;
+
+          startCelebration();
+        }, 1500);
+      }
+
+      setTimeout(() => {
+        clearInterval(intervals[i]);
+      }, 2000);
+    }, delay);
+
+    delay += 700;
+  }
+}
+
+function startCelebration() {
+  ongoingCelebration = true;
+  let start = Date.now();
+  let duration = 10000;
+
+  function effectsLoop() {
+    if (!ongoingCelebration) return;
+    let elapsed = Date.now() - start;
+    if (elapsed < duration) {
+      launchConfetti();
+      createBalloons();
+      setTimeout(effectsLoop, 500);
+    } else {
+      document.getElementById("balloonContainer").innerHTML = '';
+      ongoingCelebration = false;
+    }
+  }
+  effectsLoop();
+}
+
+function launchConfetti() {
+  confetti({
+    particleCount: 150,
+    spread: 120,
+    origin: { x: Math.random(), y: Math.random() * 0.4 },
+    colors: ['#ff1744', '#2979ff', '#ffea00', '#00e676']
+  });
+}
+
+function createBalloons() {
+  const container = document.getElementById("balloonContainer");
+  const balloon = document.createElement("div");
+  balloon.className = "balloon";
+  balloon.style.left = `${Math.random() * 100}%`;
+  balloon.style.background = `radial-gradient(circle, #${Math.floor(Math.random()*16777215).toString(16)}, #${Math.floor(Math.random()*16777215).toString(16)})`;
+  container.appendChild(balloon);
+
+  setTimeout(() => {
+    balloon.remove();
+  }, 6000);
+}
+</script>
+
+</body>
+</html>
